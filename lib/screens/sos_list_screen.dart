@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/sos_ticket.dart';
 import '../services/app_state.dart';
+import '../widgets/emergency_triage_sheet.dart';
 
 class SosListScreen extends StatelessWidget {
   const SosListScreen({super.key});
@@ -15,12 +16,27 @@ class SosListScreen extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text(
-            'Emergency Blood Requests',
+            'Emergency Blood Feed',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
+          actions: [
+            IconButton(
+              tooltip: 'Simulate Incoming Emergency',
+              icon: const Icon(Icons.flash_on, color: Colors.amberAccent),
+              onPressed: () {
+                appState.simulateIncomingEmergency();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    backgroundColor: Colors.redAccent,
+                    content: Text('🚨 Simulated Incoming SOS created near your location!'),
+                  ),
+                );
+              },
+            ),
+          ],
           bottom: const TabBar(
-            indicatorColor: Colors.red,
-            labelColor: Colors.red,
+            indicatorColor: Colors.redAccent,
+            labelColor: Colors.redAccent,
             tabs: [
               Tab(icon: Icon(Icons.verified), text: 'Eligible For You'),
               Tab(icon: Icon(Icons.list_alt), text: 'All Active SOS'),
@@ -64,6 +80,12 @@ class SosListScreen extends StatelessWidget {
                 'Your current blood group: ${appState.currentUser.bloodGroup}',
                 style: const TextStyle(fontSize: 13, color: Colors.grey),
               ),
+              const SizedBox(height: 14),
+              OutlinedButton.icon(
+                onPressed: () => appState.simulateIncomingEmergency(),
+                icon: const Icon(Icons.flash_on, color: Colors.amberAccent, size: 16),
+                label: const Text('Simulate Emergency SOS'),
+              ),
             ],
           ),
         ),
@@ -76,156 +98,141 @@ class SosListScreen extends StatelessWidget {
       itemBuilder: (ctx, index) {
         final ticket = tickets[index];
         final distance = appState.getDistanceToTicket(ticket);
+        final isMyDispatch = ticket.acceptedDonorName == appState.currentUser.name;
 
         return Card(
           elevation: 2,
           margin: const EdgeInsets.only(bottom: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Top Header: Blood Group, Status Badge, Units
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.red.shade700,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            ticket.bloodGroup,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: BorderSide(
+              color: isMyDispatch ? Colors.redAccent : Colors.transparent,
+              width: 1.5,
+            ),
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: () => EmergencyTriageSheet.show(context, ticket),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Top Header: Blood Group, Status Badge, Units
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade700,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              ticket.bloodGroup,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${ticket.unitsRequired} Units Required',
-                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                        ),
-                      ],
-                    ),
-                    _buildStatusChip(ticket.status),
-                  ],
-                ),
-                const SizedBox(height: 12),
-
-                // Hospital and Location Info
-                Text(
-                  ticket.hospitalName,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  ticket.hospitalAddress,
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
-                ),
-                const SizedBox(height: 8),
-
-                // Patient Info & Distance
-                Row(
-                  children: [
-                    Icon(Icons.person, size: 16, color: Colors.grey.shade600),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Patient: ${ticket.patientName}',
-                      style: TextStyle(fontSize: 13, color: Colors.grey.shade800),
-                    ),
-                    const Spacer(),
-                    Icon(Icons.near_me, size: 16, color: Colors.red.shade700),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${distance.toStringAsFixed(1)} km away',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.red.shade700,
+                          const SizedBox(width: 8),
+                          Text(
+                            '${ticket.unitsRequired} Units Required',
+                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
-                const Divider(height: 24),
+                      _buildStatusChip(ticket.status),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
 
-                // Bottom Action Button
-                if (ticket.status == TicketStatus.pending)
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red.shade700,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      icon: const Icon(Icons.volunteer_activism),
-                      label: const Text('Accept & Save Life'),
-                      onPressed: () {
-                        final ok = appState.acceptTicket(ticket.id);
-                        if (ok) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              backgroundColor: Colors.teal.shade800,
-                              content: Text('Accepted! En-route to ${ticket.hospitalName}.'),
-                            ),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              backgroundColor: Colors.redAccent,
-                              content: Text('Cannot accept: You are in 90-day cooldown or incompatible.'),
-                            ),
-                          );
-                        }
-                      },
-                    ),
-                  )
-                else if (ticket.status == TicketStatus.accepted)
+                  // Hospital and Location Info
+                  Text(
+                    ticket.hospitalName,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    ticket.hospitalAddress,
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Patient Info & Distance
                   Row(
                     children: [
+                      Icon(Icons.person, size: 16, color: Colors.grey.shade600),
+                      const SizedBox(width: 4),
                       Expanded(
-                        child: OutlinedButton.icon(
-                          icon: const Icon(Icons.directions_car),
-                          label: const Text('Mark En Route'),
-                          onPressed: () => appState.markEnRoute(ticket.id),
+                        child: Text(
+                          'Patient: ${ticket.patientName}',
+                          style: TextStyle(fontSize: 13, color: Colors.grey.shade800),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.teal.shade700),
-                          icon: const Icon(Icons.verified),
-                          label: const Text('Verify Arrival'),
-                          onPressed: () => appState.fulfillTicket(ticket.id),
+                      const SizedBox(width: 8),
+                      Icon(Icons.near_me, size: 16, color: Colors.red.shade700),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${distance.toStringAsFixed(1)} km away',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red.shade700,
                         ),
                       ),
                     ],
-                  )
-                else if (ticket.status == TicketStatus.enRoute)
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.teal.shade700),
-                      icon: const Icon(Icons.check_circle),
-                      label: const Text('Hospital Verification (Complete)'),
-                      onPressed: () => appState.fulfillTicket(ticket.id),
-                    ),
-                  )
-                else
-                  const Center(
-                    child: Text(
-                      '✓ Fulfilled & Safe',
-                      style: TextStyle(color: Colors.teal, fontWeight: FontWeight.bold),
-                    ),
                   ),
-              ],
+                  const Divider(height: 24),
+
+                  // Bottom Action Button / Triage Tap Hint
+                  Row(
+                    children: [
+                      if (appState.currentRole == UserRole.hospital)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.shade50,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.amber.shade300),
+                          ),
+                          child: Text(
+                            'Handover OTP: ${ticket.handoverOtp}',
+                            style: TextStyle(
+                              color: Colors.amber.shade900,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        )
+                      else if (isMyDispatch && (ticket.status == TicketStatus.accepted || ticket.status == TicketStatus.enRoute))
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade50,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            'ETA: ${ticket.etaMinutes ?? 8} min • ${ticket.status == TicketStatus.enRoute ? "En Route" : "Preparing"}',
+                            style: TextStyle(color: Colors.blue.shade800, fontWeight: FontWeight.bold, fontSize: 12),
+                          ),
+                        )
+                      else
+                        Text(
+                          'Tap to inspect triage & dispatch details',
+                          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                        ),
+                      const Spacer(),
+                      Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey.shade400),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         );

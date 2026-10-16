@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -7,8 +8,16 @@ import 'screens/profile_screen.dart';
 import 'screens/sos_list_screen.dart';
 import 'services/app_state.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  try {
+    // Will initialize automatically if GoogleService-Info.plist or google-services.json is present
+    await Firebase.initializeApp();
+  } catch (_) {
+    // Running in offline-first local mode
+  }
+
   runApp(
     ChangeNotifierProvider(
       create: (_) => AppState(),

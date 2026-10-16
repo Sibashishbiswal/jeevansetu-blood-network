@@ -18,15 +18,21 @@ class _CreateSosScreenState extends State<CreateSosScreen> {
   final _hospitalNameController = TextEditingController(text: 'VIPS Emergency Medical Center');
   final _hospitalAddressController = TextEditingController(text: 'Outer Ring Road, Pitampura, New Delhi');
 
+  final _phoneController = TextEditingController(text: '+91 11 2658 8500');
+  final _triageNotesController = TextEditingController(text: 'Urgent Trauma / Surgery Ward');
+
   String _selectedBloodGroup = 'O-';
   int _units = 2;
   double _radiusKm = 6.0;
+  bool _isBroadcasting = false;
 
   @override
   void dispose() {
     _patientNameController.dispose();
     _hospitalNameController.dispose();
     _hospitalAddressController.dispose();
+    _phoneController.dispose();
+    _triageNotesController.dispose();
     super.dispose();
   }
 
@@ -74,7 +80,7 @@ class _CreateSosScreenState extends State<CreateSosScreen> {
               TextFormField(
                 controller: _patientNameController,
                 decoration: const InputDecoration(
-                  labelText: 'Patient Full Name & Ward/Bed',
+                  labelText: 'Patient Full Name & Bed Number',
                   hintText: 'e.g. Ramesh Kumar (Trauma OT-2)',
                   prefixIcon: Icon(Icons.person_pin),
                   border: OutlineInputBorder(),
@@ -123,15 +129,34 @@ class _CreateSosScreenState extends State<CreateSosScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Hospital Name
-              TextFormField(
-                controller: _hospitalNameController,
-                decoration: const InputDecoration(
-                  labelText: 'Hospital Name',
-                  prefixIcon: Icon(Icons.local_hospital),
-                  border: OutlineInputBorder(),
-                ),
-                validator: (val) => (val == null || val.trim().isEmpty) ? 'Please enter hospital name' : null,
+              // Hospital Name & Phone
+              Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: TextFormField(
+                      controller: _hospitalNameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Hospital Name',
+                        prefixIcon: Icon(Icons.local_hospital),
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (val) => (val == null || val.trim().isEmpty) ? 'Please enter hospital name' : null,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: TextFormField(
+                      controller: _phoneController,
+                      decoration: const InputDecoration(
+                        labelText: 'Triage Phone',
+                        prefixIcon: Icon(Icons.phone),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
 
@@ -139,11 +164,23 @@ class _CreateSosScreenState extends State<CreateSosScreen> {
               TextFormField(
                 controller: _hospitalAddressController,
                 decoration: const InputDecoration(
-                  labelText: 'Hospital Address / Floor',
+                  labelText: 'Hospital Address / Floor / Ward',
                   prefixIcon: Icon(Icons.location_on),
                   border: OutlineInputBorder(),
                 ),
                 validator: (val) => (val == null || val.trim().isEmpty) ? 'Please enter address' : null,
+              ),
+              const SizedBox(height: 16),
+
+              // Triage Notes
+              TextFormField(
+                controller: _triageNotesController,
+                decoration: const InputDecoration(
+                  labelText: 'Clinical Triage Notes (Urgency / Details)',
+                  hintText: 'e.g. Critical surgery underway, priority 1 emergency',
+                  prefixIcon: Icon(Icons.notes),
+                  border: OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 20),
 
@@ -186,36 +223,47 @@ class _CreateSosScreenState extends State<CreateSosScreen> {
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  icon: const Icon(Icons.emergency_share, size: 24),
-                  label: const Text(
-                    'BROADCAST EMERGENCY SOS',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  icon: _isBroadcasting
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white))
+                      : const Icon(Icons.emergency_share, size: 24),
+                  label: Text(
+                    _isBroadcasting ? 'BROADCASTING DISPATCH...' : 'BROADCAST EMERGENCY SOS 🩸',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      appState.createSosTicket(
-                        patientName: _patientNameController.text.trim(),
-                        bloodGroup: _selectedBloodGroup,
-                        unitsRequired: _units,
-                        hospitalName: _hospitalNameController.text.trim(),
-                        hospitalAddress: _hospitalAddressController.text.trim(),
-                        latitude: appState.currentLocation.latitude + 0.005,
-                        longitude: appState.currentLocation.longitude + 0.005,
-                        radiusKm: _radiusKm,
-                      );
+                  onPressed: _isBroadcasting
+                      ? null
+                      : () async {
+                          if (_formKey.currentState!.validate()) {
+                            setState(() => _isBroadcasting = true);
 
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          backgroundColor: Colors.teal.shade800,
-                          content: Text(
-                            'SOS Broadcast Sent! Matched nearby donors within ${_radiusKm.toInt()} km.',
-                          ),
-                        ),
-                      );
+                            await appState.createSosTicket(
+                              patientName: _patientNameController.text.trim(),
+                              bloodGroup: _selectedBloodGroup,
+                              unitsRequired: _units,
+                              hospitalName: _hospitalNameController.text.trim(),
+                              hospitalAddress: _hospitalAddressController.text.trim(),
+                              hospitalPhone: _phoneController.text.trim(),
+                              triageNotes: _triageNotesController.text.trim(),
+                              latitude: appState.currentLocation.latitude + 0.005,
+                              longitude: appState.currentLocation.longitude + 0.005,
+                              radiusKm: _radiusKm,
+                            );
 
-                      widget.onCreated();
-                    }
-                  },
+                            setState(() => _isBroadcasting = false);
+
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  backgroundColor: Colors.teal.shade800,
+                                  content: Text(
+                                    '🚨 SOS Broadcast Active! Dispatched to matching donors in ${_radiusKm.toInt()} km.',
+                                  ),
+                                ),
+                              );
+                              widget.onCreated();
+                            }
+                          }
+                        },
                 ),
               ),
             ],

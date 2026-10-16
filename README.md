@@ -23,23 +23,34 @@ Traditional broadcast methods (such as unverified WhatsApp/social media forwards
 
 ## 📱 Core Features
 
-### 1. 🗺️ Live OpenStreetMap (OSM) Dispatch Radar
+### 1. 🗺️ Live OpenStreetMap (OSM) Dispatch Radar & Route Navigation
 * Interactive free OpenStreetMap rendered via `flutter_map`.
+* Real-time road routing polyline rendered dynamically between donor GPS coordinates and hospital emergency triage via open-source **OSRM API** with curved urban waypoint interpolation fallback.
 * Visualizes real-time hospital SOS locations with emergency pulsing dispatch radius circles (5 km – 15 km).
-* Displays live community donor positions and donor readiness status.
+* Floating **In-Transit Dispatch HUD** displaying live ETA (mins), distance remaining, and quick action controls.
 
-### 2. ⚡ Real-Time Emergency SOS Feed
+### 2. ⚡ Real-Time Emergency SOS Feed & Triage Desk
 * Two categorized views: **"Eligible For You"** (filtered strictly by your blood group + 90-day eligibility + distance) and **"All Active SOS"**.
-* Dynamic status tracker: `SOS PENDING` ➔ `ACCEPTED` ➔ `EN ROUTE` ➔ `FULFILLED`.
+* Dynamic dispatch lifecycle: `SOS PENDING` ➔ `ACCEPTED` (Locks ticket) ➔ `EN ROUTE` (Live route polyline) ➔ `BED ARRIVAL HANDOVER` (4-Digit OTP) ➔ `FULFILLED`.
+* Interactive **Emergency Triage Sheet** displaying patient bed number, clinical triage notes, and direct hospital calling.
 
-### 3. 🏥 Hospital Emergency Dispatch Desk
-* Clean intake form for hospital triage staff to input patient bed, units needed, blood group, and set emergency radius.
-* Single-click emergency broadcast to the network.
+### 3. 🔐 4-Digit Clinical Handover OTP Verification
+* Prevents fake or zombie donations: hospital desk issues a unique 4-digit code (e.g. `#8492`).
+* Arriving donor enters the code bedside; upon successful validation:
+  * Ticket transitions to `FULFILLED` across all network nodes.
+  * Donation is officially stamped into the donor's digital medical passport.
+  * Medical 90-day safety cooldown timer activates immediately to protect donor health.
 
-### 4. 🪪 Donor Profile & Digital Medical Pass
-* Displays real-time donor eligibility status with countdown timers.
+### 4. 🪪 Digital Medical Pass & Verified Donation History
+* Complete record of verified donations with hospital names, units, and verification OTP badges.
+* Real-time 90-day safety cooldown countdown with visual eligibility indicators.
 * Dynamic **Clinical Compatibility Matrix** showing exactly which blood groups the user can donate to and receive from.
-* Quick testing mode toggle to simulate different blood groups and roles (Donor View vs. Hospital Authority View) for demonstration purposes.
+* Instant simulation controls: toggle cooldown state, switch blood group, and switch between Donor Mode and Hospital Authority Mode.
+
+### 5. ☁️ Offline-First Local Engine & Firebase Cloud Architecture
+* **Offline-First Persistence:** Profile, custom blood group, active dispatches, and donation records persist across restarts via `shared_preferences`.
+* **Firebase Cloud Sync:** Real-time synchronization via Google Cloud Firestore (`firebase_core`, `cloud_firestore`) with atomic transaction-based concurrency locking to prevent race conditions.
+* Built-in **Emergency Influx Simulator** (⚡ button in AppBar) to generate realistic critical emergencies for evaluation and testing.
 
 ---
 
@@ -50,6 +61,10 @@ Traditional broadcast methods (such as unverified WhatsApp/social media forwards
   * [`flutter_map`](https://pub.dev/packages/flutter_map) (Powered by open-source OpenStreetMap tile servers)
   * [`geolocator`](https://pub.dev/packages/geolocator) (Device GPS positioning & accuracy)
   * [`latlong2`](https://pub.dev/packages/latlong2) (Haversine spherical distance calculations)
+  * Open Source Routing Machine (**OSRM**) for turn-by-turn road polyline generation.
+* **Storage & Cloud Database:**
+  * [`shared_preferences`](https://pub.dev/packages/shared_preferences) for local offline-first storage
+  * [`cloud_firestore`](https://pub.dev/packages/cloud_firestore) for real-time cloud multi-device sync
 * **Typography & UI:** [Google Fonts (Inter)](https://fonts.google.com/specimen/Inter), Material Design 3
 
 ---
@@ -60,26 +75,26 @@ Traditional broadcast methods (such as unverified WhatsApp/social media forwards
        ┌────────────────────────────────────────────────────────┐
        │                Flutter Mobile App                      │
        │                                                        │
-       │   [ Live Map (OSM) ]      [ SOS Alert Feed ]           │
-       │   [ Hospital Dispatch ]   [ Donor Medical Pass ]       │
+       │   [ Live Map (OSM + Route) ]  [ SOS Alert Feed ]       │
+       │   [ Hospital Dispatch Desk ]  [ Medical Pass History ] │
        └───────────────────────────┬────────────────────────────┘
                                    │
                                    ▼
        ┌────────────────────────────────────────────────────────┐
        │                  AppState Engine                       │
        │                                                        │
-       │  • Haversine Distance Filter (d <= Radius Km)          │
+       │  • Haversine & OSRM Road Route Calculations            │
        │  • BloodMatrix (ABO & Rh Clinical Compatibility)       │
        │  • Medical Cooldown Checker (>= 90 Days)               │
-       │  • Concurrency Locking (Avoid Duplicate Acceptances)   │
-       └───────────────────────────┬────────────────────────────┘
-                                   │
-                   ┌───────────────┴───────────────┐
-                   ▼                               ▼
-       ┌───────────────────────┐       ┌───────────────────────┐
-       │   OpenStreetMap API   │       │  Device GPS Hardware  │
-       │   (Free Map Tiles)    │       │  (Geolocator Service) │
-       └───────────────────────┘       └───────────────────────┘
+       │  • 4-Digit Handover OTP Verification Engine            │
+       │  • Atomic Concurrency Lock (Avoid Double Dispatch)     │
+       └──────────────┬──────────────────────────┬──────────────┘
+                      │                          │
+                      ▼                          ▼
+       ┌────────────────────────┐      ┌────────────────────────┐
+       │ Local Storage Service  │      │  Cloud Firestore Sync  │
+       │  (SharedPreferences)   │      │  (Real-Time Database)  │
+       └────────────────────────┘      └────────────────────────┘
 ```
 
 ---
@@ -94,7 +109,7 @@ Traditional broadcast methods (such as unverified WhatsApp/social media forwards
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/<your-username>/rakshak-blood-network.git
+   git clone https://github.com/Sibashishbiswal/jeevansetu-blood-network.git
    cd rakshak-blood-network
    ```
 
@@ -103,11 +118,12 @@ Traditional broadcast methods (such as unverified WhatsApp/social media forwards
    flutter pub get
    ```
 
-3. **Verify installation:**
+3. **Verify code & run automated test suite:**
    ```bash
    flutter analyze
+   flutter test
    ```
-   *(Expected output: No issues found!)*
+   *(Expected output: No issues found! All 11 unit & widget tests passed!)*
 
 4. **Run the App in Chrome (Instant Testing):**
    ```bash
