@@ -67,16 +67,28 @@ class _MapScreenState extends State<MapScreen> {
         ),
         actions: [
           IconButton(
+            tooltip: 'Switch Mode (${appState.currentRole == UserRole.donor ? "Donor Mode" : "Hospital Mode"})',
+            icon: Icon(
+              appState.currentRole == UserRole.donor ? Icons.local_hospital_outlined : Icons.person_outline,
+              color: appState.currentRole == UserRole.donor ? Colors.redAccent : Colors.tealAccent,
+            ),
+            onPressed: () {
+              appState.toggleRole();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  duration: const Duration(seconds: 2),
+                  content: Text(
+                    'Switched to ${appState.currentRole == UserRole.donor ? "Donor View" : "Hospital Authority View"}',
+                  ),
+                ),
+              );
+            },
+          ),
+          IconButton(
             tooltip: 'Simulate Incoming Emergency',
             icon: const Icon(Icons.flash_on, color: Colors.amberAccent),
             onPressed: () {
               appState.simulateIncomingEmergency();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  backgroundColor: Colors.redAccent,
-                  content: Text('🚨 Simulated Incoming SOS generated near your location!'),
-                ),
-              );
             },
           ),
           IconButton(
@@ -320,22 +332,30 @@ class _MapScreenState extends State<MapScreen> {
                 color: const Color(0xFF161B22),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
-                  side: const BorderSide(color: Colors.redAccent, width: 1.5),
+                  side: BorderSide(
+                    color: appState.hasArrivedAtHospital ? Colors.tealAccent : Colors.redAccent,
+                    width: 1.8,
+                  ),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(14),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      // Header Row: Hospital, Patient, Live ETA & Distance
                       Row(
                         children: [
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Colors.red.withValues(alpha: 0.2),
+                              color: (appState.hasArrivedAtHospital ? Colors.teal : Colors.red).withValues(alpha: 0.2),
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.directions_car, color: Colors.redAccent, size: 22),
+                            child: Icon(
+                              appState.hasArrivedAtHospital ? Icons.local_hospital : Icons.directions_car,
+                              color: appState.hasArrivedAtHospital ? Colors.tealAccent : Colors.redAccent,
+                              size: 22,
+                            ),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
@@ -360,41 +380,117 @@ class _MapScreenState extends State<MapScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: Colors.green.withValues(alpha: 0.2),
+                              color: (appState.hasArrivedAtHospital ? Colors.tealAccent : Colors.greenAccent).withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.4)),
+                              border: Border.all(
+                                color: (appState.hasArrivedAtHospital ? Colors.tealAccent : Colors.greenAccent).withValues(alpha: 0.4),
+                              ),
                             ),
                             child: Text(
-                              '${activeTicket.etaMinutes ?? 8} min ETA',
-                              style: const TextStyle(
-                                color: Colors.greenAccent,
+                              appState.hasArrivedAtHospital
+                                  ? 'ARRIVED 🏥'
+                                  : '${appState.simulatedDistanceRemainingKm > 0 ? "${appState.simulatedDistanceRemainingKm.toStringAsFixed(1)} km • " : ""}${appState.activeEtaMinutes ?? 8} min ETA',
+                              style: TextStyle(
+                                color: appState.hasArrivedAtHospital ? Colors.tealAccent : Colors.greenAccent,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 12,
+                                fontSize: 11,
                               ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () {
-                                _mapController.move(
-                                  LatLng(activeTicket.latitude, activeTicket.longitude),
-                                  14.0,
-                                );
-                              },
-                              icon: const Icon(Icons.crop_free, size: 16),
-                              label: const Text('View Target'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.white70,
-                                side: const BorderSide(color: Colors.white24),
+                      const SizedBox(height: 10),
+
+                      // Transit Progress Bar
+                      if (appState.activeRoutePoints.length > 1)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: appState.hasArrivedAtHospital
+                                  ? 1.0
+                                  : appState.currentTransitStep / (appState.activeRoutePoints.length - 1),
+                              backgroundColor: Colors.white10,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                appState.hasArrivedAtHospital ? Colors.tealAccent : Colors.redAccent,
                               ),
+                              minHeight: 4,
                             ),
                           ),
-                          const SizedBox(width: 10),
+                        ),
+
+                      // Arrival Banner if reached hospital bedside
+                      if (appState.hasArrivedAtHospital)
+                        Container(
+                          margin: const EdgeInsets.symmetric(vertical: 8),
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.teal.withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.tealAccent.withValues(alpha: 0.4)),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.verified, color: Colors.tealAccent, size: 20),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'ARRIVED AT HOSPITAL BEDSIDE! Tap "Verify Handover" to enter 4-digit code.',
+                                  style: TextStyle(color: Colors.tealAccent, fontSize: 11, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      const SizedBox(height: 8),
+
+                      // Simulation Controls Row (Day 3 Feature)
+                      Row(
+                        children: [
+                          // Live Transit Simulation Button
+                          Expanded(
+                            flex: 3,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: appState.isTransitSimulating
+                                    ? Colors.amber.shade900
+                                    : appState.hasArrivedAtHospital
+                                        ? Colors.teal.shade800
+                                        : Colors.blueGrey.shade800,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              icon: Icon(
+                                appState.isTransitSimulating
+                                    ? Icons.pause
+                                    : appState.hasArrivedAtHospital
+                                        ? Icons.replay
+                                        : Icons.play_arrow,
+                                size: 18,
+                              ),
+                              label: Text(
+                                appState.isTransitSimulating
+                                    ? 'PAUSE (${appState.currentTransitStep + 1}/${appState.activeRoutePoints.length})'
+                                    : appState.hasArrivedAtHospital
+                                        ? 'RESTART TRANSIT'
+                                        : 'SIMULATE LIVE TRANSIT 🚗',
+                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                              ),
+                              onPressed: () {
+                                if (appState.isTransitSimulating) {
+                                  appState.pauseTransitSimulation();
+                                } else {
+                                  appState.startTransitSimulation();
+                                }
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+
+                          // Open Handover Verification / Triage HUD Button
                           Expanded(
                             flex: 2,
                             child: ElevatedButton.icon(
@@ -402,20 +498,22 @@ class _MapScreenState extends State<MapScreen> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: activeTicket.status == TicketStatus.enRoute
                                     ? Colors.tealAccent.shade700
-                                    : Colors.blue.shade700,
+                                    : Colors.redAccent.shade700,
                                 foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                               ),
                               icon: Icon(
                                 activeTicket.status == TicketStatus.enRoute
                                     ? Icons.verified
                                     : Icons.navigation,
-                                size: 18,
+                                size: 16,
                               ),
                               label: Text(
                                 activeTicket.status == TicketStatus.enRoute
-                                    ? 'VERIFY HANDOVER'
-                                    : 'OPEN DISPATCH HUD',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                    ? 'VERIFY OTP'
+                                    : 'DISPATCH HUD',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
                               ),
                             ),
                           ),

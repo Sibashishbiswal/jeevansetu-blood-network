@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'screens/create_sos_screen.dart';
+import 'screens/hospital_desk_screen.dart';
 import 'screens/map_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/sos_list_screen.dart';
 import 'services/app_state.dart';
+import 'widgets/incoming_sos_dialog.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -64,15 +66,33 @@ class MainNavigationShell extends StatefulWidget {
 
 class _MainNavigationShellState extends State<MainNavigationShell> {
   int _currentIndex = 0;
+  String? _activeDialogAlertId;
 
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
     final activeAlertsCount = appState.tickets.where((t) => !t.isLocked).length;
+    final isHospital = appState.currentRole == UserRole.hospital;
+
+    // Real-Time Incoming Emergency Broadcast Modal Listener
+    final alert = appState.incomingBroadcastAlert;
+    if (alert != null && _activeDialogAlertId != alert.id) {
+      _activeDialogAlertId = alert.id;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        IncomingSosDialog.show(context, alert).then((_) {
+          _activeDialogAlertId = null;
+        });
+      });
+    }
 
     final pages = [
       const MapScreen(),
-      const SosListScreen(),
+      isHospital
+          ? HospitalDeskScreen(
+              onOpenCreateSos: () => setState(() => _currentIndex = 2),
+            )
+          : const SosListScreen(),
       CreateSosScreen(
         onCreated: () {
           setState(() => _currentIndex = 0); // Jump to map on create
@@ -97,14 +117,14 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
             icon: Badge(
               label: Text('$activeAlertsCount'),
               isLabelVisible: activeAlertsCount > 0,
-              child: const Icon(Icons.notifications_active_outlined),
+              child: Icon(isHospital ? Icons.local_hospital_outlined : Icons.notifications_active_outlined),
             ),
             selectedIcon: Badge(
               label: Text('$activeAlertsCount'),
               isLabelVisible: activeAlertsCount > 0,
-              child: const Icon(Icons.notifications_active, color: Colors.red),
+              child: Icon(isHospital ? Icons.local_hospital : Icons.notifications_active, color: Colors.red),
             ),
-            label: 'SOS Alerts',
+            label: isHospital ? 'Hospital Desk' : 'SOS Alerts',
           ),
           const NavigationDestination(
             icon: Icon(Icons.add_circle_outline),

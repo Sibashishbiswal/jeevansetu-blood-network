@@ -21,16 +21,28 @@ class SosListScreen extends StatelessWidget {
           ),
           actions: [
             IconButton(
+              tooltip: 'Switch Mode (${appState.currentRole == UserRole.donor ? "Donor Mode" : "Hospital Mode"})',
+              icon: Icon(
+                appState.currentRole == UserRole.donor ? Icons.local_hospital_outlined : Icons.person_outline,
+                color: appState.currentRole == UserRole.donor ? Colors.redAccent : Colors.tealAccent,
+              ),
+              onPressed: () {
+                appState.toggleRole();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    duration: const Duration(seconds: 2),
+                    content: Text(
+                      'Switched to ${appState.currentRole == UserRole.donor ? "Donor View" : "Hospital Authority View"}',
+                    ),
+                  ),
+                );
+              },
+            ),
+            IconButton(
               tooltip: 'Simulate Incoming Emergency',
               icon: const Icon(Icons.flash_on, color: Colors.amberAccent),
               onPressed: () {
                 appState.simulateIncomingEmergency();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    backgroundColor: Colors.redAccent,
-                    content: Text('🚨 Simulated Incoming SOS created near your location!'),
-                  ),
-                );
               },
             ),
           ],

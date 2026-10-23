@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
@@ -45,10 +46,26 @@ class AppState extends ChangeNotifier {
   int? activeEtaMinutes;
   bool isCalculatingRoute = false;
 
+  // Live Transit Simulation State (Day 3 Feature)
+  bool isTransitSimulating = false;
+  int currentTransitStep = 0;
+  Timer? _transitTimer;
+  double simulatedDistanceRemainingKm = 0.0;
+  bool hasArrivedAtHospital = false;
+
+  // Real-Time Incoming Emergency Broadcast Alert (Pops up high-urgency modal)
+  SosTicket? incomingBroadcastAlert;
+
   bool get isCloudConnected => FirebaseSyncService.isConnectedToCloud;
 
   AppState() {
     _initApp();
+  }
+
+  @override
+  void dispose() {
+    _transitTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _initApp() async {
@@ -267,8 +284,19 @@ class AppState extends ChangeNotifier {
     );
 
     _tickets.insert(0, newTicket);
+    // If donor is compatible and eligible, trigger incoming emergency broadcast alert
+    if (BloodMatrix.isCompatible(currentUser.bloodGroup, newTicket.bloodGroup)) {
+      incomingBroadcastAlert = newTicket;
+    }
+
     await StorageService.saveTickets(_tickets);
     await _firebaseSync.publishTicket(newTicket);
+    notifyListeners();
+  }
+
+  // Dismiss incoming broadcast alert modal
+  void dismissBroadcastAlert() {
+    incomingBroadcastAlert = null;
     notifyListeners();
   }
 
@@ -283,6 +311,11 @@ class AppState extends ChangeNotifier {
     // Check blood compatibility & cooldown
     if (!currentUser.isMedicallyEligible) return false;
     if (!BloodMatrix.isCompatible(currentUser.bloodGroup, ticket.bloodGroup)) return false;
+
+    // Clear broadcast alert modal if it was for this ticket
+    if (incomingBroadcastAlert?.id == ticketId) {
+      incomingBroadcastAlert = null;
+    }
 
     isCalculatingRoute = true;
     notifyListeners();
@@ -302,6 +335,9 @@ class AppState extends ChangeNotifier {
     activeDispatchTicket = ticket;
     activeRoutePoints = routeResult.points;
     activeEtaMinutes = routeResult.etaMinutes;
+    simulatedDistanceRemainingKm = routeResult.distanceKm;
+    currentTransitStep = 0;
+    hasArrivedAtHospital = false;
     isCalculatingRoute = false;
 
     await StorageService.saveTickets(_tickets);
@@ -328,6 +364,98 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  // --- DAY 3 MILESTONE: In-Transit Route GPS Simulation Engine ---
+
+  /// Starts stepped GPS transit simulation along the calculated OSRM route waypoints
+  void startTransitSimulation() {
+    if (activeDispatchTicket == null || activeRoutePoints.isEmpty) return;
+
+    // Mark en-route automatically if not already
+    if (activeDispatchTicket!.status != TicketStatus.enRoute) {
+      activeDispatchTicket!.status = TicketStatus.enRoute;
+      _firebaseSync.updateTicketStatus(activeDispatchTicket!.id, TicketStatus.enRoute);
+    }
+
+    if (currentTransitStep >= activeRoutePoints.length - 1) {
+      currentTransitStep = 0;
+      hasArrivedAtHospital = false;
+    }
+
+    isTransitSimulating = true;
+    hasArrivedAtHospital = false;
+    notifyListeners();
+
+    _transitTimer?.cancel();
+    _transitTimer = Timer.periodic(const Duration(milliseconds: 1300), (timer) {
+      if (currentTransitStep < activeRoutePoints.length - 1) {
+        currentTransitStep++;
+        currentLocation = activeRoutePoints[currentTransitStep];
+        currentUser = currentUser.copyWith(
+          latitude: currentLocation.latitude,
+          longitude: currentLocation.longitude,
+        );
+
+        if (activeDispatchTicket != null) {
+          final target = LatLng(activeDispatchTicket!.latitude, activeDispatchTicket!.longitude);
+          simulatedDistanceRemainingKm = GeoService.calculateDistanceKm(
+            currentLocation.latitude,
+            currentLocation.longitude,
+            target.latitude,
+            target.longitude,
+          );
+          activeEtaMinutes = GeoService.calculateEtaMinutes(simulatedDistanceRemainingKm);
+          activeDispatchTicket!.etaMinutes = activeEtaMinutes;
+        }
+
+        notifyListeners();
+      } else {
+        // Vehicle reached destination hospital!
+        timer.cancel();
+        isTransitSimulating = false;
+        hasArrivedAtHospital = true;
+        simulatedDistanceRemainingKm = 0.0;
+        activeEtaMinutes = 0;
+        if (activeDispatchTicket != null) {
+          activeDispatchTicket!.etaMinutes = 0;
+        }
+        notifyListeners();
+      }
+    });
+  }
+
+  /// Pauses transit simulation
+  void pauseTransitSimulation() {
+    _transitTimer?.cancel();
+    isTransitSimulating = false;
+    notifyListeners();
+  }
+
+  /// Resets transit simulation to starting position
+  void resetTransitSimulation() {
+    _transitTimer?.cancel();
+    isTransitSimulating = false;
+    currentTransitStep = 0;
+    hasArrivedAtHospital = false;
+    if (activeRoutePoints.isNotEmpty) {
+      currentLocation = activeRoutePoints.first;
+      currentUser = currentUser.copyWith(
+        latitude: currentLocation.latitude,
+        longitude: currentLocation.longitude,
+      );
+      if (activeDispatchTicket != null) {
+        final target = LatLng(activeDispatchTicket!.latitude, activeDispatchTicket!.longitude);
+        simulatedDistanceRemainingKm = GeoService.calculateDistanceKm(
+          currentLocation.latitude,
+          currentLocation.longitude,
+          target.latitude,
+          target.longitude,
+        );
+        activeEtaMinutes = GeoService.calculateEtaMinutes(simulatedDistanceRemainingKm);
+      }
+    }
+    notifyListeners();
+  }
+
   // Cancel an active dispatch
   Future<void> cancelDispatch(String ticketId) async {
     final ticketIndex = _tickets.indexWhere((t) => t.id == ticketId);
@@ -340,6 +468,11 @@ class AppState extends ChangeNotifier {
       ticket.acceptedAt = null;
       ticket.routePoints = [];
       ticket.etaMinutes = null;
+
+      _transitTimer?.cancel();
+      isTransitSimulating = false;
+      currentTransitStep = 0;
+      hasArrivedAtHospital = false;
 
       if (activeDispatchTicket?.id == ticketId) {
         activeDispatchTicket = null;
@@ -366,6 +499,12 @@ class AppState extends ChangeNotifier {
     // Success! Mark ticket fulfilled
     ticket.status = TicketStatus.fulfilled;
     ticket.fulfilledAt = DateTime.now();
+
+    // Stop transit simulation if running
+    _transitTimer?.cancel();
+    isTransitSimulating = false;
+    currentTransitStep = 0;
+    hasArrivedAtHospital = false;
 
     // Record verified donation in donor's medical pass
     final newRecord = DonationRecord(
@@ -442,8 +581,10 @@ class AppState extends ChangeNotifier {
     );
 
     _tickets.insert(0, urgentTicket);
+    incomingBroadcastAlert = urgentTicket; // Triggers instant high-urgency broadcast modal!
     StorageService.saveTickets(_tickets);
     notifyListeners();
   }
 }
+
 

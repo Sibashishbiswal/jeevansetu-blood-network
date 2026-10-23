@@ -29,25 +29,37 @@ Traditional broadcast methods (such as unverified WhatsApp/social media forwards
 * Visualizes real-time hospital SOS locations with emergency pulsing dispatch radius circles (5 km – 15 km).
 * Floating **In-Transit Dispatch HUD** displaying live ETA (mins), distance remaining, and quick action controls.
 
-### 2. ⚡ Real-Time Emergency SOS Feed & Triage Desk
-* Two categorized views: **"Eligible For You"** (filtered strictly by your blood group + 90-day eligibility + distance) and **"All Active SOS"**.
-* Dynamic dispatch lifecycle: `SOS PENDING` ➔ `ACCEPTED` (Locks ticket) ➔ `EN ROUTE` (Live route polyline) ➔ `BED ARRIVAL HANDOVER` (4-Digit OTP) ➔ `FULFILLED`.
-* Interactive **Emergency Triage Sheet** displaying patient bed number, clinical triage notes, and direct hospital calling.
+### 2. 🚗 Live GPS In-Transit Route Simulation Engine (Day 3 Milestone)
+* Stepped GPS transit simulation moving the donor marker along calculated OSRM road waypoints in real time.
+* Real-time countdown of remaining driving distance (km) and dynamic ETA (minutes).
+* Smooth map camera auto-tracking centering on vehicle motion.
+* **Automatic Bedside Arrival Detection (<50m):** Triggers audio-visual arrival notification and prompts 4-digit Bedside Handover OTP verification upon reaching the hospital!
 
-### 3. 🔐 4-Digit Clinical Handover OTP Verification
+### 3. 🚨 Real-Time High-Urgency Emergency Broadcast Modal
+* Immediate pop-up alert triggered when an SOS is dispatched in the donor's vicinity.
+* Displays emergency pulsing siren, hospital name, patient trauma severity, distance, and clinical compatibility guarantee.
+* Quick one-tap **"ACCEPT & RESPOND 🚗"** action to lock ticket and start navigation immediately.
+
+### 4. 🏥 Hospital Authority Command Desk
+* Dedicated command console for duty doctors, nurses, and blood bank coordinators.
+* Real-time status cards: *Awaiting Donors*, *Responders En Route*, and *Fulfilled Transfusions*.
+* Prominent **4-Digit Bedside Handover OTP Box** (`#8492`) for medical staff to verify arriving voluntary donors at the patient's bedside.
+* Seamless role toggle between **Donor Mode** and **Hospital Authority Mode** from any screen.
+
+### 5. 🔐 4-Digit Clinical Handover OTP Verification
 * Prevents fake or zombie donations: hospital desk issues a unique 4-digit code (e.g. `#8492`).
 * Arriving donor enters the code bedside; upon successful validation:
   * Ticket transitions to `FULFILLED` across all network nodes.
   * Donation is officially stamped into the donor's digital medical passport.
   * Medical 90-day safety cooldown timer activates immediately to protect donor health.
 
-### 4. 🪪 Digital Medical Pass & Verified Donation History
+### 6. 🪪 Digital Medical Pass & Verified Donation History
 * Complete record of verified donations with hospital names, units, and verification OTP badges.
 * Real-time 90-day safety cooldown countdown with visual eligibility indicators.
 * Dynamic **Clinical Compatibility Matrix** showing exactly which blood groups the user can donate to and receive from.
 * Instant simulation controls: toggle cooldown state, switch blood group, and switch between Donor Mode and Hospital Authority Mode.
 
-### 5. ☁️ Offline-First Local Engine & Firebase Cloud Architecture
+### 7. ☁️ Offline-First Local Engine & Firebase Cloud Architecture
 * **Offline-First Persistence:** Profile, custom blood group, active dispatches, and donation records persist across restarts via `shared_preferences`.
 * **Firebase Cloud Sync:** Real-time synchronization via Google Cloud Firestore (`firebase_core`, `cloud_firestore`) with atomic transaction-based concurrency locking to prevent race conditions.
 * Built-in **Emergency Influx Simulator** (⚡ button in AppBar) to generate realistic critical emergencies for evaluation and testing.
@@ -123,7 +135,7 @@ Traditional broadcast methods (such as unverified WhatsApp/social media forwards
    flutter analyze
    flutter test
    ```
-   *(Expected output: No issues found! All 11 unit & widget tests passed!)*
+   *(Expected output: No issues found! All 16 unit & widget tests passed!)*
 
 4. **Run the App in Chrome (Instant Testing):**
    ```bash
