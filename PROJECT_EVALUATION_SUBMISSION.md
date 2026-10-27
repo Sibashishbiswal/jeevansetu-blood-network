@@ -111,7 +111,7 @@
 > * **Persistence & Cloud Sync:**
 >   * `shared_preferences` (Offline-first local cache for profiles, tickets, and medical history).
 >   * `cloud_firestore` (Real-time distributed document database with optimistic offline writes).
-> * **Verification & Quality:** Automated unit, integration, and widget test suite (64 passing tests) with zero analyzer lints.
+> * **Verification & Quality:** Automated unit, integration, and widget test suite (71 passing tests) with zero analyzer lints.
 
 #### System / Project Architecture
 ```text
@@ -147,6 +147,7 @@
 > 3. **Day 3 (Simulation, Broadcast & Command Desk):** Engineered the live stepped GPS transit navigation simulator, built the real-time emergency broadcast alert modal (`IncomingSosDialog`), created the dedicated Hospital Command Desk (`HospitalDeskScreen`), and expanded the automated test suite to 16/16 passing tests.
 > 4. **Day 4 (Persistence, Network Health & Hardening):** Built full offline persistence test suite for `StorageService`, developed the live animated `NetworkStatsCard` displaying real-time donor network health, active emergency count, and fulfilled units, and engineered an exhaustive 25-point clinical edge-case test suite covering Rh-negative donor rules, cooldown boundaries, and concurrency guards — expanding automated test coverage to **50/50 passing tests** with zero analyzer lints.
 > 5. **Day 5 (Clinical Certificates, Audit Stream & Recognition):** Developed the official `LifeSaverCertificateDialog` modal allowing donors to inspect and export authenticated transfusion credentials with cryptographic serial IDs, created the live chronological `HospitalAuditTimelineWidget` in the Hospital Command Desk for complete medico-legal event tracking, and engineered volunteer recognition tiers (Bronze, Silver, Gold Rakshak) — pushing the verified test suite to **64/64 passing tests**.
+> 6. **Day 6 (Proximity Sorting, Offline Resilience & Production Readiness):** Implemented dynamic proximity-based dispatch sorting and multi-radius filtering (`getTicketsSortedByProximity`), developed the real-time `OfflineSyncBanner` guaranteeing zero data loss during clinical connectivity drops, validated complete web release compilation (`flutter build web`), and built the end-to-end lifecycle verification suite — establishing a rock-solid **71/71 passing automated test suite** with 100% zero analyzer lints.
 
 #### Major Technical Challenge & Solution
 > **Challenge:** Ensuring accurate spatial proximity matching, real-time vehicle route navigation, and instant concurrency locking across mobile devices without incurring costly Google Maps API billing or requiring expensive proprietary backend servers.
@@ -191,7 +192,7 @@ cd rakshak-blood-network
 # 2. Install dependencies
 flutter pub get
 
-# 3. Run automated tests (64/64 tests pass)
+# 3. Run automated tests (71/71 tests pass)
 flutter test
 
 # 4. Verify code quality (Zero issues found)

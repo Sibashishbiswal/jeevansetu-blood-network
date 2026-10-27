@@ -9,6 +9,7 @@ import 'screens/profile_screen.dart';
 import 'screens/sos_list_screen.dart';
 import 'services/app_state.dart';
 import 'widgets/incoming_sos_dialog.dart';
+import 'widgets/offline_sync_banner.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -102,7 +103,14 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     ];
 
     return Scaffold(
-      body: pages[_currentIndex],
+      body: SafeArea(
+        child: Column(
+          children: [
+            const OfflineSyncBanner(),
+            Expanded(child: pages[_currentIndex]),
+          ],
+        ),
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (idx) => setState(() => _currentIndex = idx),

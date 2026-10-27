@@ -681,6 +681,39 @@ class AppState extends ChangeNotifier {
     StorageService.saveTickets(_tickets);
     notifyListeners();
   }
+
+  // --- Day 6 Milestone: Dynamic Proximity Sorting & Multi-Radius Filter ---
+  bool isOfflineModeSimulated = false;
+
+  void toggleOfflineMode() {
+    isOfflineModeSimulated = !isOfflineModeSimulated;
+    notifyListeners();
+  }
+
+  /// Returns emergency tickets sorted by Haversine distance, with optional
+  /// blood group and radius filters applied.
+  List<SosTicket> getTicketsSortedByProximity({
+    String? bloodGroupFilter,
+    double? maxRadiusKm,
+  }) {
+    List<SosTicket> result = List.from(_tickets);
+
+    if (bloodGroupFilter != null && bloodGroupFilter != 'ALL') {
+      result = result.where((t) => t.bloodGroup == bloodGroupFilter).toList();
+    }
+
+    if (maxRadiusKm != null && maxRadiusKm > 0) {
+      result = result.where((t) => getDistanceToTicket(t) <= maxRadiusKm).toList();
+    }
+
+    result.sort((a, b) {
+      final distA = getDistanceToTicket(a);
+      final distB = getDistanceToTicket(b);
+      return distA.compareTo(distB);
+    });
+
+    return result;
+  }
 }
 
 
