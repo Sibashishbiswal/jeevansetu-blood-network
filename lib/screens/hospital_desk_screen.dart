@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/sos_ticket.dart';
 import '../services/app_state.dart';
 import '../widgets/emergency_triage_sheet.dart';
+import '../widgets/hospital_audit_timeline.dart';
 
 class HospitalDeskScreen extends StatefulWidget {
   final VoidCallback onOpenCreateSos;
@@ -178,6 +179,11 @@ class _HospitalDeskScreenState extends State<HospitalDeskScreen> {
               )
             else
               ...filteredTickets.map((ticket) => _buildHospitalTicketCard(context, ticket, appState)),
+
+            const SizedBox(height: 18),
+            // Day 5 Milestone: Live Clinical Dispatch Audit Trail
+            const HospitalAuditTimelineWidget(),
+            const SizedBox(height: 70), // Spacing for FAB
           ],
         ),
       ),

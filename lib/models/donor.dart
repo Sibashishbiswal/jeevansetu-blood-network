@@ -17,6 +17,10 @@ class DonationRecord {
     required this.verificationOtp,
   });
 
+  /// Day 5 Milestone: Formatted Certificate Serial Code
+  String get certificateSerial =>
+      'JS-CERT-${id.length >= 8 ? id.substring(0, 8).toUpperCase() : id.toUpperCase()}';
+
   Map<String, dynamic> toJson() => {
     'id': id,
     'hospitalName': hospitalName,
@@ -65,6 +69,19 @@ class Donor {
   bool get isMedicallyEligible {
     final daysSinceDonation = DateTime.now().difference(lastDonationDate).inDays;
     return daysSinceDonation >= 90;
+  }
+
+  /// Total units donated across history
+  int get totalUnitsDonated =>
+      donationHistory.fold(0, (sum, record) => sum + record.units);
+
+  /// Day 5 Milestone: Volunteer Honor & Recognition Badge Tier
+  String get donorBadgeTier {
+    final count = donationHistory.length;
+    if (count == 0) return 'Active Volunteer 🩸';
+    if (count <= 2) return 'Bronze Life-Saver 🥉';
+    if (count <= 5) return 'Silver Guardian 🥈';
+    return 'Gold Rakshak 🥇';
   }
 
   int get daysUntilEligible {

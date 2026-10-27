@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../services/app_state.dart';
 import '../services/blood_matrix.dart';
 import '../widgets/network_stats_card.dart';
+import '../widgets/life_saver_certificate_dialog.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -65,6 +66,30 @@ class ProfileScreen extends StatelessWidget {
             Text(
               donor.phone,
               style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+            ),
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.amber.shade700),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.stars, color: Colors.amber, size: 16),
+                  const SizedBox(width: 6),
+                  Text(
+                    donor.donorBadgeTier,
+                    style: TextStyle(
+                      color: Colors.amber.shade900,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 16),
 
@@ -246,60 +271,86 @@ class ProfileScreen extends StatelessWidget {
                       )
                     else
                       ...donor.donationHistory.map(
-                        (record) => Container(
-                          margin: const EdgeInsets.only(bottom: 10),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.green.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: const BoxDecoration(
-                                  color: Colors.teal,
-                                  shape: BoxShape.circle,
+                        (record) => InkWell(
+                          borderRadius: BorderRadius.circular(10),
+                          onTap: () {
+                            LifeSaverCertificateDialog.show(
+                              context,
+                              record: record,
+                              donorName: donor.name,
+                              donorBloodGroup: donor.bloodGroup,
+                              donorBadgeTier: donor.donorBadgeTier,
+                            );
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.teal,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.workspace_premium, color: Colors.white, size: 16),
                                 ),
-                                child: const Icon(Icons.favorite, color: Colors.white, size: 16),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        record.hospitalName,
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                      ),
+                                      Text(
+                                        'Patient: ${record.patientName} (${record.bloodGroup})',
+                                        style: const TextStyle(color: Colors.black87, fontSize: 12),
+                                      ),
+                                      Text(
+                                        dateFormat.format(record.donatedAt),
+                                        style: const TextStyle(color: Colors.grey, fontSize: 11),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
-                                    Text(
-                                      record.hospitalName,
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.teal.shade100,
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        'OTP #${record.verificationOtp}',
+                                        style: TextStyle(
+                                          color: Colors.teal.shade900,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                     ),
-                                    Text(
-                                      'Patient: ${record.patientName} (${record.bloodGroup})',
-                                      style: const TextStyle(color: Colors.black87, fontSize: 12),
-                                    ),
-                                    Text(
-                                      dateFormat.format(record.donatedAt),
-                                      style: const TextStyle(color: Colors.grey, fontSize: 11),
+                                    const SizedBox(height: 4),
+                                    const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.open_in_new, size: 11, color: Colors.teal),
+                                        SizedBox(width: 2),
+                                        Text('Certificate', style: TextStyle(color: Colors.teal, fontSize: 10, fontWeight: FontWeight.bold)),
+                                      ],
                                     ),
                                   ],
                                 ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.teal.shade100,
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  'OTP #${record.verificationOtp}',
-                                  style: TextStyle(
-                                    color: Colors.teal.shade900,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),

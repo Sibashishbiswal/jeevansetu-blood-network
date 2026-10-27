@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:uuid/uuid.dart';
 import '../models/donor.dart';
 import '../models/sos_ticket.dart';
+import '../models/audit_log.dart';
 import 'blood_matrix.dart';
 import 'firebase_sync_service.dart';
 import 'geo_service.dart';
@@ -40,6 +41,31 @@ class AppState extends ChangeNotifier {
   final List<Donor> _networkDonors = [];
   List<Donor> get networkDonors => List.unmodifiable(_networkDonors);
 
+  // Day 5 Milestone: Clinical Dispatch Audit Trail & Timeline
+  final List<AuditLog> _auditLogs = [];
+  List<AuditLog> get auditLogs => List.unmodifiable(_auditLogs);
+
+  void addAuditLog({
+    required String title,
+    required String details,
+    required String type,
+    String? ticketId,
+  }) {
+    final log = AuditLog(
+      id: _uuid.v4(),
+      title: title,
+      details: details,
+      timestamp: DateTime.now(),
+      type: type,
+      ticketId: ticketId,
+    );
+    _auditLogs.insert(0, log);
+    if (_auditLogs.length > 50) {
+      _auditLogs.removeLast();
+    }
+    notifyListeners();
+  }
+
   // Active in-transit emergency navigation state
   SosTicket? activeDispatchTicket;
   List<LatLng> activeRoutePoints = [];
@@ -59,6 +85,7 @@ class AppState extends ChangeNotifier {
   bool get isCloudConnected => FirebaseSyncService.isConnectedToCloud;
 
   AppState() {
+    _initSampleData();
     _initApp();
   }
 
@@ -84,8 +111,6 @@ class AppState extends ChangeNotifier {
     if (savedTickets != null && savedTickets.isNotEmpty) {
       _tickets.clear();
       _tickets.addAll(savedTickets);
-    } else {
-      _initSampleData();
     }
 
     // Check if there's an ongoing active dispatch
@@ -205,6 +230,31 @@ class AppState extends ChangeNotifier {
         lastDonationDate: DateTime.now().subtract(const Duration(days: 140)),
       ),
     ]);
+
+    // Seed realistic audit entries for Hospital Command Desk
+    _auditLogs.addAll([
+      AuditLog(
+        id: _uuid.v4(),
+        title: 'Emergency SOS Initialized',
+        details: 'AIIMS Trauma Center requested 2 Units of O- for patient Aarav Sharma',
+        timestamp: DateTime.now().subtract(const Duration(minutes: 12)),
+        type: 'created',
+      ),
+      AuditLog(
+        id: _uuid.v4(),
+        title: 'Automated Geo-Filter Triggered',
+        details: 'Matched 3 voluntary donors within 5 km geo-fence (ABO/Rh compatible, >=90 days cooldown)',
+        timestamp: DateTime.now().subtract(const Duration(minutes: 11)),
+        type: 'match',
+      ),
+      AuditLog(
+        id: _uuid.v4(),
+        title: 'Bedside Transfusion Verified',
+        details: 'Max Super Speciality: 1 Unit B+ fulfilled for Priya Verma (OTP #4829 authenticated)',
+        timestamp: DateTime.now().subtract(const Duration(hours: 3)),
+        type: 'fulfilled',
+      ),
+    ]);
   }
 
   Future<void> refreshLocation() async {
@@ -291,6 +341,14 @@ class AppState extends ChangeNotifier {
 
     await StorageService.saveTickets(_tickets);
     await _firebaseSync.publishTicket(newTicket);
+
+    addAuditLog(
+      title: 'Emergency SOS Created',
+      details: '$hospitalName: $unitsRequired Unit(s) of $bloodGroup requested for $patientName (Bedside OTP: #$randomOtp)',
+      type: 'created',
+      ticketId: newTicket.id,
+    );
+
     notifyListeners();
   }
 
@@ -348,6 +406,13 @@ class AppState extends ChangeNotifier {
       donorPhone: currentUser.phone,
     );
 
+    addAuditLog(
+      title: 'Donor Matched & Dispatched',
+      details: 'Donor ${currentUser.name} (${currentUser.bloodGroup}) accepted SOS for ${ticket.patientName}. Atomic lock engaged.',
+      type: 'accepted',
+      ticketId: ticketId,
+    );
+
     notifyListeners();
     return true;
   }
@@ -360,6 +425,14 @@ class AppState extends ChangeNotifier {
       activeDispatchTicket = _tickets[ticketIndex];
       await StorageService.saveTickets(_tickets);
       await _firebaseSync.updateTicketStatus(ticketId, TicketStatus.enRoute);
+
+      addAuditLog(
+        title: 'Donor In-Transit',
+        details: 'Donor en route to ${_tickets[ticketIndex].hospitalName}',
+        type: 'transit',
+        ticketId: ticketId,
+      );
+
       notifyListeners();
     }
   }
@@ -418,6 +491,14 @@ class AppState extends ChangeNotifier {
         if (activeDispatchTicket != null) {
           activeDispatchTicket!.etaMinutes = 0;
         }
+
+        addAuditLog(
+          title: 'Bedside Arrival Detected (<50m)',
+          details: 'Donor vehicle reached ${activeDispatchTicket?.hospitalName}. Bedside Handover OTP requested.',
+          type: 'arrival',
+          ticketId: activeDispatchTicket?.id,
+        );
+
         notifyListeners();
       }
     });
@@ -482,6 +563,14 @@ class AppState extends ChangeNotifier {
 
       await StorageService.saveTickets(_tickets);
       await _firebaseSync.updateTicketStatus(ticketId, TicketStatus.pending);
+
+      addAuditLog(
+        title: 'Dispatch Cancelled',
+        details: 'SOS for ${ticket.patientName} reset back to pending pool',
+        type: 'cancelled',
+        ticketId: ticketId,
+      );
+
       notifyListeners();
     }
   }
@@ -530,6 +619,13 @@ class AppState extends ChangeNotifier {
     await StorageService.saveUser(currentUser);
     await StorageService.saveTickets(_tickets);
     await _firebaseSync.updateTicketStatus(ticketId, TicketStatus.fulfilled);
+
+    addAuditLog(
+      title: 'Transfusion Verified & Fulfilled',
+      details: '${ticket.hospitalName}: Bedside OTP #$enteredOtp authenticated. 90-day cooldown initiated for ${currentUser.name}',
+      type: 'fulfilled',
+      ticketId: ticketId,
+    );
 
     notifyListeners();
     return true;
