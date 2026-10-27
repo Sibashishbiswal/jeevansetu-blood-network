@@ -1,5 +1,5 @@
 name: rakshak_blood_network
-description: "A new Flutter project."
+description: "JeevanSetu — Geo-Fenced Critical Blood Donor Matching & Emergency Dispatch Network (Flutter, OSM, Firebase)"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev

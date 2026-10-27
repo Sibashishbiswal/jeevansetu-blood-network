@@ -150,7 +150,7 @@ A robust emergency dispatch ecosystem that reduces blood mobilization time from 
 * **Storage & Cloud Sync:**
   * `shared_preferences` (Offline-first local cache for user profile, tickets, and medical history).
   * `cloud_firestore` (Real-time cloud database synchronization).
-* **Code Quality & Testing:** Automated test suite with 16 unit and widget tests, achieving 0 analyzer issues (`flutter analyze`).
+* **Code Quality & Testing:** Automated test suite with 50 unit, integration, and widget tests, achieving 0 analyzer issues (`flutter analyze`).
 
 ### 5.3 System / Project Architecture
 
@@ -185,6 +185,7 @@ A robust emergency dispatch ecosystem that reduces blood mobilization time from 
 * **Day 1 (Core Foundation):** Implemented clinical domain models (`Donor`, `SosTicket`, `DonationRecord`), developed the `BloodMatrix` compatibility engine, implemented Haversine spherical distance calculations, and integrated the interactive OpenStreetMap radar.
 * **Day 2 (Turn-by-Turn Routing & OTP Safety):** Integrated the OSRM road polyline routing API with urban curvature fallback, built the In-Transit HUD with live ETA, created the 4-digit Bedside Handover OTP verification engine, and implemented local persistence via `shared_preferences`.
 * **Day 3 (Simulation, Emergency Broadcast & Hospital Desk):** Engineered the live stepped GPS transit navigation simulator, built the real-time emergency broadcast alert modal (`IncomingSosDialog`), developed the dedicated Hospital Command Desk (`HospitalDeskScreen`), and expanded the automated test suite to 16/16 passing tests.
+* **Day 4 (Persistence, Live Network Health & Hardening):** Built full offline persistence test suite for `StorageService`, developed the live animated `NetworkStatsCard` displaying real-time donor network health, active emergency count, and fulfilled units, and engineered an exhaustive 25-point clinical edge-case test suite covering Rh-negative donor rules, cooldown boundaries, and concurrency guards — expanding automated test coverage to **50/50 passing tests** with zero analyzer lints.
 
 ### 5.5 Major Technical Challenge & Solution
 * **Challenge:** Implementing real-time spatial proximity filtering, turn-by-turn road route navigation, and instant concurrency locking across mobile devices without incurring expensive Google Maps API bills or requiring costly dedicated backend servers.
@@ -504,7 +505,7 @@ class GeoService {
 ### Static Code Analysis (`flutter analyze`)
 ```text
 Analyzing rakshak_blood_network...
-No issues found! (ran in 12.3s)
+No issues found! (ran in 10.6s)
 ```
 
 ### Test Suite Execution (`flutter test`)
@@ -525,7 +526,41 @@ No issues found! (ran in 12.3s)
 00:00 +13: Day 3 Milestone: Hospital Command Desk & Role Switching Toggling role switches views
 00:00 +14: Day 3 Milestone: Hospital Command Desk access Handover OTP for bedside verification
 00:00 +15: JeevanSetu App loads navigation smoke test
-00:01 +16: All tests passed!
+00:00 +16: BloodMatrix Edge Cases B- can donate to B-, B+, AB-, and AB+ (Rh-negative donor rule)
+00:00 +17: BloodMatrix Edge Cases AB- can donate to AB- and AB+ only
+00:00 +18: BloodMatrix Edge Cases A- can donate to A-, A+, AB-, and AB+ (Rh-negative donor rule)
+00:00 +19: BloodMatrix Edge Cases getCompatibleDonorsFor returns non-empty list for all 8 groups
+00:00 +20: BloodMatrix Edge Cases unknown blood group returns false for isCompatible
+00:00 +21: BloodMatrix Edge Cases allGroups contains exactly 8 entries
+00:00 +22: Donor Medical Eligibility Edge Cases Donor exactly at 90-day boundary is eligible
+00:00 +23: Donor Medical Eligibility Edge Cases Donor at 89 days is NOT eligible and shows 1 day remaining
+00:00 +24: Donor Medical Eligibility Edge Cases First-time donor (180+ days ago) is fully eligible
+00:00 +25: Donor Medical Eligibility Edge Cases DonationRecord JSON round-trip preserves all fields
+00:00 +26: GeoService Edge Cases Distance to same point is zero
+00:00 +27: GeoService Edge Cases ETA for very short distance returns minimum value
+00:00 +28: GeoService Edge Cases ETA for 10 km journey at 32 km/h is approximately 19 minutes
+00:00 +29: GeoService Edge Cases Curved fallback waypoints start and end at correct coordinates
+00:00 +30: SosTicket Business Logic Edge Cases Ticket isLocked when unitsFulfilled >= unitsRequired
+00:00 +31: SosTicket Business Logic Edge Cases Ticket isLocked when status is fulfilled
+00:00 +32: SosTicket Business Logic Edge Cases Pending ticket with 0 units fulfilled is NOT locked
+00:00 +33: SosTicket Business Logic Edge Cases SosTicket fromJson handles missing optional fields with defaults
+00:00 +34: AppState Concurrency & Safety Guards Ineligible donor (in cooldown) cannot accept ticket
+00:00 +35: AppState Concurrency & Safety Guards Incompatible donor blood group cannot accept ticket
+00:00 +36: AppState Concurrency & Safety Guards Locked ticket cannot be accepted twice (atomic lock guard)
+00:00 +37: AppState Concurrency & Safety Guards Cancel dispatch resets ticket back to pending state
+00:00 +38: AppState Concurrency & Safety Guards Wrong OTP does not fulfill ticket and leaves it en-route
+00:00 +39: AppState Concurrency & Safety Guards Dismissing broadcast alert clears incomingBroadcastAlert
+00:00 +40: AppState Concurrency & Safety Guards eligibleTicketsForDonor filters out incompatible blood groups
+00:00 +41: StorageService Persistence Round-Trips saveUser then loadUser returns identical Donor profile
+00:00 +42: StorageService Persistence Round-Trips saveUser overwrites previous save correctly
+00:00 +43: StorageService Persistence Round-Trips saveTickets then loadTickets returns identical list
+00:00 +44: StorageService Persistence Round-Trips loadTickets returns null when nothing saved
+00:00 +45: StorageService Persistence Round-Trips saveTickets with empty list persists and reloads as empty
+00:00 +46: StorageService Persistence Round-Trips saveDonationHistory then loadDonationHistory returns full history
+00:00 +47: StorageService Persistence Round-Trips loadDonationHistory returns null when nothing saved
+00:00 +48: StorageService Persistence Round-Trips Ticket serialization preserves all TicketStatus enum values correctly
+00:00 +49: JeevanSetu App loads navigation smoke test
+00:01 +50: All tests passed!
 ```
 
 ---

@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../services/app_state.dart';
 import '../services/blood_matrix.dart';
+import '../widgets/network_stats_card.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -306,6 +307,10 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
             ),
+            const SizedBox(height: 16),
+
+            // Day 4 Feature: Live Network Health & Statistics
+            const NetworkStatsCard(),
             const SizedBox(height: 24),
 
             // Role Toggle (Demonstration helper)

@@ -111,7 +111,7 @@
 > * **Persistence & Cloud Sync:**
 >   * `shared_preferences` (Offline-first local cache for profiles, tickets, and medical history).
 >   * `cloud_firestore` (Real-time distributed document database with optimistic offline writes).
-> * **Verification & Quality:** Automated unit and widget test suite (16 passing tests) with zero analyzer lints.
+> * **Verification & Quality:** Automated unit, integration, and widget test suite (50 passing tests) with zero analyzer lints.
 
 #### System / Project Architecture
 ```text
@@ -145,6 +145,7 @@
 > 1. **Day 1 (Foundation):** Designed clinical domain models (`SosTicket`, `Donor`, `DonationRecord`), implemented `BloodMatrix` compatibility logic, and set up the interactive OpenStreetMap radar.
 > 2. **Day 2 (Navigation & Safety):** Integrated OSRM road polyline routing with curved waypoint fallback, engineered the 4-digit Bedside Handover OTP mechanism, implemented 90-day cooldown tracking, and built offline persistence via `shared_preferences`.
 > 3. **Day 3 (Simulation, Broadcast & Command Desk):** Engineered the live stepped GPS transit navigation simulator, built the real-time emergency broadcast alert modal (`IncomingSosDialog`), created the dedicated Hospital Command Desk (`HospitalDeskScreen`), and expanded the automated test suite to 16/16 passing tests.
+> 4. **Day 4 (Persistence, Network Health & Hardening):** Built full offline persistence test suite for `StorageService`, developed the live animated `NetworkStatsCard` displaying real-time donor network health, active emergency count, and fulfilled units, and engineered an exhaustive 25-point clinical edge-case test suite covering Rh-negative donor rules, cooldown boundaries, and concurrency guards — expanding automated test coverage to **50/50 passing tests** with zero analyzer lints.
 
 #### Major Technical Challenge & Solution
 > **Challenge:** Ensuring accurate spatial proximity matching, real-time vehicle route navigation, and instant concurrency locking across mobile devices without incurring costly Google Maps API billing or requiring expensive proprietary backend servers.
@@ -189,7 +190,7 @@ cd rakshak-blood-network
 # 2. Install dependencies
 flutter pub get
 
-# 3. Run automated tests (16/16 tests pass)
+# 3. Run automated tests (50/50 tests pass)
 flutter test
 
 # 4. Verify code quality (Zero issues found)
