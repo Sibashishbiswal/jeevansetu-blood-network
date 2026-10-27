@@ -135,7 +135,7 @@ Traditional broadcast methods (such as unverified WhatsApp/social media forwards
    flutter analyze
    flutter test
    ```
-   *(Expected output: No issues found! All 16 unit & widget tests passed!)*
+   *(Expected output: No issues found! All 50 unit, integration & widget tests passed!)*
 
 4. **Run the App in Chrome (Instant Testing):**
    ```bash
