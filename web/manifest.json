@@ -1,11 +1,11 @@
 {
-    "name": "rakshak_blood_network",
-    "short_name": "rakshak_blood_network",
+    "name": "JeevanSetu — Emergency Blood Dispatch Network",
+    "short_name": "JeevanSetu",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#D32F2F",
+    "theme_color": "#D32F2F",
+    "description": "Geo-Fenced Critical Blood Donor Matching & Emergency Dispatch Network",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
