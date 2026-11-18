@@ -1,8 +1,44 @@
 # 🩸 JeevanSetu: Geo-Fenced Critical Blood Donor Matching & Emergency Dispatch Network
 
 > **Build Something Real – Project Evaluation (20 Marks)**  
-> **Student:** 3rd Year Computer Science & Engineering  
-> **Institution:** Vivekananda Institute of Professional Studies - Technical Campus (VIPS-TC)
+> **Student:** Sibashish Biswal (3rd Year Computer Science & Engineering)  
+> **Institution:** Vivekananda Institute of Professional Studies - Technical Campus (VIPS-TC)  
+> **Live Web App:** https://sibashishbiswal.github.io/jeevansetu-blood-network/
+
+---
+
+## 🚨 The Problem Today (What Happens in Real Life)
+When a person meets with a severe road accident or a mother is bleeding in emergency surgery, the hospital often runs out of blood on their shelves (especially rare groups like **O-negative**).
+
+* **What families do right now:** They panic and forward frantic messages on WhatsApp and Instagram: *"URGENT! Need O- blood at AIIMS! Please forward!"*
+* **Why this fails:**
+  1. It wastes **2 to 4 hours** while the patient is bleeding to death (the **"Golden Hour"**).
+  2. People receiving the forward might be **50 km away** or in another city.
+  3. Once the message goes viral, **20 people show up days later** when the surgery is already over, overcrowding the hospital corridors.
+  4. **Fake blood brokers** try to sell blood illegally for exorbitant money.
+
+---
+
+## 🩸 How JeevanSetu Solves This
+
+1. **Hospital Posts an Emergency (SOS):**  
+   The duty doctor enters the patient's blood group and hospital room on the app.
+
+2. **The App Does the Math Silently:**  
+   The app automatically checks:
+   * **Location:** Who is physically within **5 to 10 km** of the hospital.
+   * **Blood Compatibility:** Who can clinically donate to this patient (e.g., `O-` can donate to anyone).
+   * **Safety Cooldown:** Has the donor rested for at least **90 days** since their last donation (so they don't get sick or anaemic).
+
+3. **Instant Siren Alert on Compatible Donors' Phones:**  
+   Only eligible donors nearby hear an emergency siren on their screen. The first donor who taps **"Accept"** locks the request—so no other donors are sent, preventing hospital crowding.
+
+4. **Live GPS Navigation & Bedside Verification:**
+   * The app shows a live turn-by-turn road route directly to the emergency ward.
+   * When the donor arrives at the patient's bedside, the doctor gives them a **4-digit secret code** (e.g., `#8492`).
+   * Entering this code completes the donation, updates their digital badge, and starts their **90-day rest timer**.
+
+Built completely on **free OpenStreetMap and Flutter**, JeevanSetu costs **zero rupees in map fees**, protecting donor health and saving critical lives during emergencies.
 
 ---
 
