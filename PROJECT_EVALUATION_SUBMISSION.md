@@ -165,7 +165,7 @@
 > `https://github.com/Sibashishbiswal/jeevansetu-blood-network.git`
 
 #### Project Demonstration Video URL
-> *(Paste your YouTube / Google Drive unlisted video link here)*
+> `https://drive.google.com/file/d/1CErzIx1gacbfkc7Ctkia1zgQklqrm-RQ/view?usp=sharing`
 
 #### What does the demonstration show? (2-Minute Video Demo Script)
 > 1. **Live OSM Radar & Donor Profile:** Shows the donor location (O- universal donor) with active medical eligibility (>90 days cooldown) and the interactive OpenStreetMap radar with pulsing emergency radius circles.

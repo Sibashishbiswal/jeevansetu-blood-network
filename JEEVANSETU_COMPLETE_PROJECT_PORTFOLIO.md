@@ -200,7 +200,7 @@ A robust emergency dispatch ecosystem that reduces blood mobilization time from 
 ### 6.1 Application URLs & Artifacts
 * **Live Project / Application URL:** *Not Deployed (Native Android Mobile App & Local Web Build)*
 * **GitHub Repository URL:** https://github.com/Sibashishbiswal/jeevansetu-blood-network.git
-* **Project Demonstration Video URL:** *(Paste your YouTube / Google Drive unlisted link here)*
+* **Project Demonstration Video URL:** https://drive.google.com/file/d/1CErzIx1gacbfkc7Ctkia1zgQklqrm-RQ/view?usp=sharing
 * **Current Project Status:** **Working Application / Minimum Viable Product (MVP)**
 
 ### 6.2 What Does the Demonstration Show? (2-Minute Video Demo Script)
